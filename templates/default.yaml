@@ -1,0 +1,8 @@
+mongo:
+  host: localhost
+  port: 3002
+  name: meteor
+datafeed:
+  username: someone@example.com
+  password: datafeedsnetworkrailpassword
+
