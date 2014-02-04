@@ -7,3 +7,5 @@ standard-app-packages
 insecure
 preserve-inputs
 coffeescript
+autocompletion
+bootstrap-3

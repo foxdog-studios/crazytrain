@@ -1,0 +1,65 @@
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Crazy trains</title>
+  <meta name="description" content="I'm going off the rails of a crazy train">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  {{> stationSearch}}
+  {{> trainTimes}}
+</body>
+
+<template name="stationSearch">
+  <form id="station-form">
+    <div class="form-group">
+      <label for="station-search">Station name</label>
+      <input type="text" class="form-control"  id="station-search" value="{{stationName}}" placeholder="Enter the name of a station">
+    </div>
+  </form>
+</template>
+
+<template name="trainTimes">
+  <table class="table">
+    <tr>
+      <th>
+        Arrives
+      </th>
+      <th>
+        from
+      </th>
+      <th>
+        Departs to
+      </th>
+      <th>
+        at
+      </th>
+    </tr>
+  {{#if loaded}}
+    {{#each schedules}}
+      {{> schedule}}
+    {{else}}
+      <tr>
+        <td colspan="4">
+          nothing in the schedule!
+        </td>
+      </tr>
+    {{/each}}
+  {{else}}
+      <tr>
+        <td colspan="4">
+          loading...
+        </td>
+      </tr>
+  {{/if}}
+  </table>
+</template>
+
+<template name="schedule">
+  {{#isolate}}
+    <tr>
+      <td>{{arrival}}</td><td>{{from}}</td><td>{{to}}</td><td>{{departure}}</td>
+    </tr>
+  {{/isolate}}
+</template>
+

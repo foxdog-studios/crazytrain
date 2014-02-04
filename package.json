@@ -27,7 +27,8 @@
     "async": "~0.2.10",
     "mongo-sync": "~0.2.4",
     "fast-csv": "0.0.3",
-    "ospoint": "~0.1.2"
+    "ospoint": "~0.1.2",
+    "moment": "~2.5.1"
   },
   "devDependencies": {
     "grunt": "~0.4.2",
