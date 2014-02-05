@@ -25,11 +25,13 @@
 
 @getArrivalAndDepartureTimes = (currentTiploc, scheduleCursor) ->
   schedules = []
-  scheduleCursor.forEach (schedule) ->
-    locations = schedule.JsonScheduleV1.schedule_segment.schedule_location
+  scheduleCursor.forEach (rawSchedule) ->
+    jsonScheduleV1 = rawSchedule.JsonScheduleV1
+    locations = jsonScheduleV1.schedule_segment.schedule_location
     unless locations
       return
     schedule = {}
+    schedule.atocCode = jsonScheduleV1.atoc_code
     [start, mid..., end] = locations
     if start.tiploc_code != currentTiploc
       startStation = Stations.findOne(TiplocCode: start.tiploc_code)
@@ -39,6 +41,7 @@
         schedule.from = start.tiploc_code
     else
       schedule.from = 'Starts here'
+      schedule.platform = start.platform
     if end.tiploc_code != currentTiploc
       endStation = Stations.findOne(TiplocCode: end.tiploc_code)
       if endStation?
@@ -47,10 +50,12 @@
         schedule.to = end.tiploc_code
     else
       schedule.to = 'Terminates here'
+      schedule.platform = end.platform
     for loc in locations
       if loc.tiploc_code == currentTiploc
         schedule.arrival = loc.arrival
         schedule.departure = loc.departure
+        schedule.platform = loc.platform
         break
     schedules.push schedule
   sortedSchedules = _.sortBy schedules, (schedule) ->

@@ -6,13 +6,22 @@ config = require('config')
 csv = require('fast-csv')
 fs = require('fs')
 https = require('https')
+logger = require('logger')
 moment = require('moment')
 mongo = require('mongodb')
 OSPoint = require('ospoint')
 util = require('util')
 zlib = require('zlib')
 
-PATH_TEMPLATE = '/ntrod/CifFileAuthenticate?type=CIF_%s_TOC_FULL_DAILY&day=toc-full'
+PATH_TEMPLATE = \
+  '/ntrod/CifFileAuthenticate?type=CIF_%s_TOC_FULL_DAILY&day=toc-full'
+
+log = logger.createLogger()
+
+logAndThrowError = (error) ->
+  log.fatal error
+  throw error
+
 
 ################################################################################
 #
@@ -54,17 +63,15 @@ getMongoDb = (callback) ->
 #
 ################################################################################
 
-getSchedule = (callback, toc_code) ->
+downloadSchedule = (callback, toc_code) ->
   buffer = []
-  options =
+  httpOptions =
     hostname: 'datafeeds.networkrail.co.uk'
     path: util.format(PATH_TEMPLATE, toc_code)
     auth: "#{config.datafeed.username}:#{config.datafeed.password}"
-  req = https.request options, (res) ->
-    console.log res.statusCode
+  req = https.request httpOptions, (res) ->
     if res.statusCode == 302
       newReq = https.request res.headers.location, (res) ->
-        console.log res.statusCode
         gunzip = zlib.createGunzip()
         res.pipe(gunzip)
         gunzip.on('data', (data) ->
@@ -77,7 +84,6 @@ getSchedule = (callback, toc_code) ->
             callback(e)
         )
       newReq.end()
-    console.log res.headers
     res.on 'data', (d) ->
       process.stdout.write(d)
   req.end()
@@ -92,15 +98,18 @@ getScheduleCompositeUID = (jsonScheduleV1) ->
   cifStopIndicator = jsonScheduleV1['CIF_stp_indicator']
   return "#{cifTrainUid}#{scheduleStartDate}#{cifStopIndicator}"
 
-
-importSchedule = (scheduleData) ->
+importSchedule = (scheduleData, scheduleName, callback) ->
   entries = []
   scheduleEntries = []
-  console.log 'reading lines'
-  maxLength = 0
-  max = null
+  log.info "#{scheduleName}: reading scheduleData"
   ids = {}
-  for line in scheduleData.toString().split('\n')
+  scheduleString = scheduleData.toString()
+  log.info "#{scheduleName}: parsing schedule"
+  lines = scheduleString.split('\n')
+  numberOfLines = lines.length
+  for line, i in lines
+    if i % 1000 == 0
+      log.info "#{scheduleName}: #{i}/#{numberOfLines} parsed"
     entry = JSON.parse(line)
     if entry['EOF']
       break
@@ -121,22 +130,31 @@ importSchedule = (scheduleData) ->
       jsonScheduleV1['schedule_days_runs'] = daysRun
       scheduleEntries.push entry
 
-  console.log "#{entries.length} tiplocs to insert"
-  console.log "#{scheduleEntries.length} schedules to insert"
-  insertDbEntries(entries, scheduleEntries)
+  log.info "#{scheduleName}: #{entries.length} tiplocs to insert"
+  log.info "#{scheduleName}: #{scheduleEntries.length} schedules to insert"
+  insertDbEntries(entries, scheduleEntries, scheduleName, callback)
 
-insertDbEntries = (tiplocEntries, scheduleEntries) ->
-  console.log 'inserting into db'
+insertDbEntries = (tiplocEntries, scheduleEntries, scheduleName, callback) ->
+  log.info "#{scheduleName}: inserting into db"
   getMongoDb (db) ->
     tiplocs = db.collection('tiplocs')
     tiplocs.insert tiplocEntries, (error, docs) ->
-      console.log 'inserted the entries'
+      log.info "#{scheduleName}: inserted tiplocs"
       schedules = db.collection('schedules')
       async.each scheduleEntries, schedules.save.bind(schedules), (error) ->
         if error?
-          console.log error
-        console.log 'closing db'
+          db.close()
+          logAndThrowError error
+        log.info "#{scheduleName}: inserted schedules"
+        log.info "#{scheduleName}: closing db connection"
+        # XXX: Set these to null to get the garbage collected. I am too dumb
+        # to figure out the memory leak at the moment.
+        # Without this it was grinding to a halt halfway through, probably
+        # hitting swap space after it ran out of memory.
+        tiplocEntries = null
+        scheduleEntries = null
         db.close()
+        callback()
 
 
 ################################################################################
@@ -159,7 +177,7 @@ readRailReferenceCsv = (railReferenceCsv) ->
       getMongoDb (db) ->
         stations = db.collection('stations')
         async.each rows, stations.save.bind(stations), (error) ->
-          console.log 'stations inserted'
+          log.info 'stations inserted'
           db.close()
   ).parse()
 
@@ -172,28 +190,33 @@ readRailReferenceCsv = (railReferenceCsv) ->
 
 main = ->
   if program.railreference
-    console.log "loading rail reference form #{program.railreference}"
+    log.info "loading rail reference form #{program.railreference}"
     readRailReferenceCsv(program.railreference)
   else if program.schedules
     for schedule in program.schedules
-      console.log "loading schedule from #{schedule}"
+      log.info "loading schedule from #{schedule}"
       fs.readFile schedule, (error, data) ->
         if error
-          throw error
-        importSchedule(data)
+          logAndThrowError error
+        importSchedule(data, schedule)
   else
-    for toc_code in config.datafeed.schedule_toc_codes
-      do (toc_code) ->
-        saveSchedule = (error, data) ->
+    downloadAndImport = (toc_code, callback) ->
+      saveSchedule = (error, data) ->
+        if error
+          logAndThrowError error
+        path = "/tmp/schedule-#{toc_code}.txt"
+        fs.writeFile path, data, (error) ->
           if error
-            console.log error
-          path = "/tmp/schedule-#{toc_code}.txt"
-          fs.writeFile path, data, (error) ->
-            if error
-              console.log error
-            else
-              console.log "Saved to #{path}"
-        getSchedule(saveSchedule, toc_code)
+            logAndThrowError error
+          log.info "Saved to #{path}"
+          importSchedule data, toc_code, ->
+            data = null
+            callback()
+      downloadSchedule(saveSchedule, toc_code)
+    async.eachSeries config.datafeed.schedule_toc_codes, downloadAndImport, (error) ->
+      if error
+        logAndThrowError error
+      console.log 'done'
 
 if require.main == module
   main()

@@ -29,10 +29,16 @@
         from
       </th>
       <th>
+        platform
+      </th>
+      <th>
         Departs to
       </th>
       <th>
         at
+      </th>
+      <th>
+        Operator
       </th>
     </tr>
   {{#if loaded}}
@@ -58,7 +64,7 @@
 <template name="schedule">
   {{#isolate}}
     <tr>
-      <td>{{arrival}}</td><td>{{from}}</td><td>{{to}}</td><td>{{departure}}</td>
+      <td>{{arrival}}</td><td>{{from}}</td><td>{{platform}}</td><td>{{to}}</td><td>{{departure}}</td><td>{{atocCode}}</td>
     </tr>
   {{/isolate}}
 </template>
