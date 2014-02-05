@@ -4,6 +4,7 @@ config = require('config')
 csv = require('fast-csv')
 fs = require('fs')
 https = require('https')
+moment = require('moment')
 mongo = require('mongodb')
 OSPoint = require('ospoint')
 zlib = require('zlib')
@@ -54,6 +55,10 @@ getSchedule = (callback) ->
       process.stdout.write(d)
   req.end()
 
+daysRunToWeekArray = (daysRunString) ->
+  for char in daysRunString
+    char == '1'
+
 importSchedule = (scheduleData) ->
   entries = []
   scheduleEntries = []
@@ -70,7 +75,15 @@ importSchedule = (scheduleData) ->
       entries.push entry
     else if entry['JsonScheduleV1']
       id = entry['JsonScheduleV1']['CIF_train_uid']
-      entry['_id'] = id
+      startDate = entry['JsonScheduleV1']['schedule_start_date']
+      entry['JsonScheduleV1']['schedule_start_date'] \
+        = moment(startDate, 'YYYY-MM-DD').toDate()
+      endDate = entry['JsonScheduleV1']['schedule_end_date']
+      entry['JsonScheduleV1']['schedule_end_date'] \
+        = moment(endDate, 'YYYY-MM-DD').toDate()
+      daysRun = entry['JsonScheduleV1']['schedule_days_runs']
+      daysRun = daysRunToWeekArray(daysRun)
+      entry['JsonScheduleV1']['schedule_days_runs'] = daysRun
       scheduleEntries.push entry
 
   console.log "#{entries.length} tiplocs to insert"
