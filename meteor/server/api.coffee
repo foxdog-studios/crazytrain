@@ -13,13 +13,17 @@ RESTstop.add 'trips/:tiploc?', ->
 
 RESTstop.add 'citysdk', ->
   node = @request.body
-  tiploc = node.tiploc
+  # XXX: the JSON data comes in as the only key for an empty string. So we need
+  # to extract it and parse it as JSON.
+  node = JSON.parse(_.keys(node)[0])
+  tiploc = node.tiploc_code
   unless tiploc?
     return [403,
       message: 'You need to provide a tiploc'
     ]
   schedules = getTodaysScheduleForTiploc(tiploc)
   result = getArrivalAndDepartureTimes(tiploc, schedules)
-  node.data = result
+  node.data =
+    times: result
   return node
 
