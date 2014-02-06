@@ -22,6 +22,17 @@ Config
 Edit `config/default.yml` and put in your datafeeds.networkrail.co.uk username
 and password.
 
+Build the SCHEDULE importer
+---------------------------
+
+    npm install
+    grunt
+
+Importing SCHEDULE data
+-----------------------
+
+    ./scripts/import.zsh
+
 Meteor site
 -----------
 

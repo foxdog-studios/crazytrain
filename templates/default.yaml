@@ -2,7 +2,25 @@ mongo:
   host: localhost
   port: 3002
   name: meteor
+
+# You will want to change the datafeed schedule_toc_codes, these
+# defaults are:
+#
+# EA First Transpennine Express
+# ED Northern Rail
+# EH CrossCountry
+# EM East Midlands Trains
+# HF Virgin West Coast Trains
+# HL Arriva Trains Wales
+
 datafeed:
   username: someone@example.com
   password: datafeedsnetworkrailpassword
+  schedule_toc_codes:
+    - EA
+    - ED
+    - EH
+    - EM
+    - HF
+    - HL
 
