@@ -1,5 +1,7 @@
 RESTstop.configure()
 
+logger = new Logger('api')
+
 RESTstop.add 'trips/:tiploc?', ->
   tiploc = @params.tiploc
   unless tiploc?
@@ -7,6 +9,7 @@ RESTstop.add 'trips/:tiploc?', ->
       success: false
       message:'You need to provide a tiploc as a parameter'
     ]
+  logger.info("Request for #{tiploc}")
   schedules = getTodaysScheduleForTiploc(tiploc)
   result = getArrivalAndDepartureTimes(tiploc, schedules)
   results: result
@@ -17,6 +20,7 @@ RESTstop.add 'citysdk', ->
   # to extract it and parse it as JSON.
   node = JSON.parse(_.keys(node)[0])
   tiploc = node.tiploc_code
+  logger.info("Request for #{tiploc}")
   unless tiploc?
     return [403,
       message: 'You need to provide a tiploc'

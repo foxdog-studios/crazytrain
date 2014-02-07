@@ -5,6 +5,9 @@
 @getDateScheduleForTiploc = (date, tiploc) ->
   # Days runs starts with monday at index 0, javascript starts with sunday at
   # index 0. We need to shift it along
+  m = moment(date)
+  startTime = parseInt(m.format('HHmm'))
+  endTime = parseInt(m.add('minutes', 60).format('HHmm'))
   day = (date.getDay() + 6) % 7
   dayQuery = {}
   dayQuery["JsonScheduleV1.schedule_days_runs.#{day}"] = true
@@ -13,6 +16,9 @@
       'JsonScheduleV1.schedule_segment.schedule_location':
         $elemMatch:
           tiploc_code: tiploc
+          time:
+            $gte: startTime
+            $lte: endTime
     ,
       'JsonScheduleV1.schedule_start_date':
         $lt: date

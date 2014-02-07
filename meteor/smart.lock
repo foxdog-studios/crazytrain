@@ -4,7 +4,9 @@
     "basePackages": {
       "autocompletion": {},
       "bootstrap-3": {},
-      "reststop2": {}
+      "reststop2": {},
+      "moment": {},
+      "pince": {}
     },
     "packages": {
       "autocompletion": {
@@ -21,6 +23,16 @@
         "git": "https://github.com/BeDifferential/reststop2.git",
         "tag": "v0.5.4",
         "commit": "12ff0306979d7b375cfa555fcaad9efafd3308ca"
+      },
+      "moment": {
+        "git": "https://github.com/acreeger/meteor-moment.git",
+        "tag": "v2.5.1",
+        "commit": "8c9bc5d3fc96705057737cb9743d555417f6e551"
+      },
+      "pince": {
+        "git": "https://github.com/mad-eye/pince.git",
+        "tag": "v0.0.5",
+        "commit": "4524ecc0bdf043c49dc62e91bbd8a99c661081ed"
       },
       "jquery-ui": {
         "git": "https://github.com/TimHeckel/meteor-jquery-ui.git",

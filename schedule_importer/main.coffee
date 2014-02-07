@@ -128,6 +128,28 @@ importSchedule = (scheduleData, scheduleName, callback) ->
       daysRun = jsonScheduleV1['schedule_days_runs']
       daysRun = daysRunToWeekArray(daysRun)
       jsonScheduleV1['schedule_days_runs'] = daysRun
+
+      scheduleSegment = jsonScheduleV1['schedule_segment']
+      scheduleLocations = scheduleSegment['schedule_location']
+
+      if scheduleLocations?
+        for scheduleLocation in scheduleLocations
+          timeKeys = ['departure', 'public_departure', 'arrival', 'pass']
+          for timeKey in timeKeys
+            if scheduleLocation[timeKey]?
+              scheduleLocation[timeKey] = parseInt(scheduleLocation[timeKey])
+          # time is used for searching for train times, they are ordered in
+          # preference. I.e. the time of a train is when it arrives, then if
+          # it does not have an arrival time it could be starting, then the
+          # departure time is important. Else it could just be passing.
+          if scheduleLocation['arrival']
+            scheduleLocation['time'] = scheduleLocation['arrival']
+          else if scheduleLocation['departure']
+            scheduleLocation['time'] = scheduleLocation['departure']
+          else if scheduleLocation['pass']
+            scheduleLocation['time'] = scheduleLocation['pass']
+
+
       scheduleEntries.push entry
 
   log.info "#{scheduleName}: #{entries.length} tiplocs to insert"

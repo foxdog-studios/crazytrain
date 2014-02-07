@@ -2,6 +2,8 @@
   "packages": {
     "autocompletion": {},
     "bootstrap-3": {},
-    "reststop2": {}
+    "reststop2": {},
+    "moment": {},
+    "pince": {}
   }
 }
