@@ -195,6 +195,11 @@ insertDbEntries = (tiplocEntries, scheduleEntries, scheduleName, callback) ->
 ################################################################################
 
 readRailReferenceCsv = (railReferenceCsv) ->
+  getTiplocToStanoxMap (tiplocToStanoxMap) ->
+    readRailReferenceCsvFromTiplocStanoxMap(railReferenceCsv, tiplocToStanoxMap)
+
+readRailReferenceCsvFromTiplocStanoxMap = (railReferenceCsv,
+                                           tiplocToStanoxMap) ->
   rows = []
   csv(railReferenceCsv, headers: true)
     .on('data', (data) ->
@@ -202,6 +207,8 @@ readRailReferenceCsv = (railReferenceCsv) ->
       latLon = point.toWGS84()
       data.latitude = latLon.latitude
       data.longitude = latLon.longitude
+      tiploc = data.TiplocCode
+      data.stanox = tiplocToStanoxMap[tiploc]
       data._id = data.TiplocCode
       rows.push(data)
     ).on('end', ->

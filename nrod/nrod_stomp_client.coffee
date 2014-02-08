@@ -49,10 +49,13 @@ class TrustMessageParser
           event_type: body.event_type
           variation_status: body.variation_status
           loc_stanox: body.loc_stanox
-          next_reporting_stanox: body.next_reporting_stanox
+          reporting_stanox: body.reporting_stanox
+          next_report_stanox: body.next_report_stanox
+          next_report_run_time: body.next_report_run_time
           planned_timestamp: body.planned_timestamp
           actual_timestamp: body.actual_timestamp
           timetable_variation: body.timetable_variation
+          train_terminated: body.train_terminated
       , @_logError
 
 
