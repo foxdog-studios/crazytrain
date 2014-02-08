@@ -1,13 +1,14 @@
-@getTodaysScheduleForTiploc = (tiploc) ->
+@getTodaysScheduleForTiploc = (tiploc, timeOffset) ->
   now = new Date()
-  getDateScheduleForTiploc(now, tiploc)
+  timeOffset or= 60
+  getDateScheduleForTiploc(now, tiploc, timeOffset)
 
-@getDateScheduleForTiploc = (date, tiploc) ->
+@getDateScheduleForTiploc = (date, tiploc, timeOffset) ->
   # Days runs starts with monday at index 0, javascript starts with sunday at
   # index 0. We need to shift it along
   m = moment(date)
   startTime = parseInt(m.format('HHmm'))
-  endTime = parseInt(m.add('minutes', 60).format('HHmm'))
+  endTime = parseInt(m.add('minutes', timeOffset).format('HHmm'))
   day = (date.getDay() + 6) % 7
   dayQuery = {}
   dayQuery["JsonScheduleV1.schedule_days_runs.#{day}"] = true
@@ -37,6 +38,7 @@
     unless locations
       return
     schedule = {}
+    schedule._id = rawSchedule._id
     schedule.atocCode = jsonScheduleV1.atoc_code
     [start, mid..., end] = locations
     if start.tiploc_code != currentTiploc
@@ -46,7 +48,7 @@
       else
         schedule.from = start.tiploc_code
     else
-      schedule.from = 'Starts here'
+      schedule.from = null
       schedule.platform = start.platform
     if end.tiploc_code != currentTiploc
       endStation = Stations.findOne(TiplocCode: end.tiploc_code)
@@ -55,7 +57,7 @@
       else
         schedule.to = end.tiploc_code
     else
-      schedule.to = 'Terminates here'
+      schedule.to = null
       schedule.platform = end.platform
     for loc in locations
       if loc.tiploc_code == currentTiploc

@@ -40,6 +40,9 @@
       <th>
         Operator
       </th>
+      <th>
+        Active?
+      </th>
     </tr>
   {{#if loaded}}
     {{#each schedules}}
@@ -64,7 +67,7 @@
 <template name="schedule">
   {{#isolate}}
     <tr>
-      <td>{{arrival}}</td><td>{{from}}</td><td>{{platform}}</td><td>{{to}}</td><td>{{departure}}</td><td>{{atocCode}}</td>
+      <td>{{arrival}}</td><td>{{from}}</td><td>{{platform}}</td><td>{{to}}</td><td>{{departure}}</td><td>{{atocCode}}</td><td>{{isActive}}</td>
     </tr>
   {{/isolate}}
 </template>

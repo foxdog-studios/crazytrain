@@ -8,10 +8,11 @@ fs = require('fs')
 https = require('https')
 logger = require('logger')
 moment = require('moment')
-mongo = require('mongodb')
 OSPoint = require('ospoint')
 util = require('util')
 zlib = require('zlib')
+
+dbUtils = require('./mongo_utils')
 
 PATH_TEMPLATE = \
   '/ntrod/CifFileAuthenticate?type=CIF_%s_TOC_FULL_DAILY&day=toc-full'
@@ -40,23 +41,6 @@ program
   .option('-r, --railreference [path_to_rail_reference]',
           'NaPTAN rail reference')
   .parse(process.argv)
-
-
-################################################################################
-#
-# Database
-#
-################################################################################
-
-getMongoDb = (callback) ->
-  onMongoConnect = (error, db) ->
-    if error
-      throw error
-    callback(db)
-
-  mongo.MongoClient.connect(
-    "mongodb://#{config.mongo.host}:#{config.mongo.port}/#{config.mongo.name}",
-    onMongoConnect)
 
 
 ################################################################################
@@ -98,10 +82,10 @@ getScheduleCompositeUID = (jsonScheduleV1) ->
   cifTrainUid = jsonScheduleV1['CIF_train_uid']
   scheduleStartDate = jsonScheduleV1['schedule_start_date']
   cifStopIndicator = jsonScheduleV1['CIF_stp_indicator']
-  return "#{cifTrainUid}#{scheduleStartDate}#{cifStopIndicator}"
+  return "#{cifTrainUid}#{scheduleStartDate}"
 
 getTiplocToStanoxMap = (callback) ->
-  getMongoDb (db) ->
+  dbUtils.getMongoDb (db) ->
     tiplocToStanoxCollection = db.collection('tiplocToStanox')
     cursor = tiplocToStanoxCollection.find({})
     cursor.toArray (error, tiplocToStanoxes) ->
@@ -183,7 +167,7 @@ importScheduleFromMap = (scheduleData, scheduleName, tiplocToStanoxMap, callback
 
 insertDbEntries = (tiplocEntries, scheduleEntries, scheduleName, callback) ->
   log.info "#{scheduleName}: inserting into db"
-  getMongoDb (db) ->
+  dbUtils.getMongoDb (db) ->
     tiplocs = db.collection('tiplocs')
     tiplocs.insert tiplocEntries, (error, docs) ->
       log.info "#{scheduleName}: inserted tiplocs"
@@ -221,7 +205,7 @@ readRailReferenceCsv = (railReferenceCsv) ->
       data._id = data.TiplocCode
       rows.push(data)
     ).on('end', ->
-      getMongoDb (db) ->
+      dbUtils.getMongoDb (db) ->
         stations = db.collection('stations')
         async.each rows, stations.save.bind(stations), (error) ->
           log.info 'stations inserted'
@@ -235,7 +219,7 @@ readRailReferenceCsv = (railReferenceCsv) ->
 ################################################################################
 
 importCorpus = (corpusData) ->
-  getMongoDb (db) ->
+  dbUtils.getMongoDb (db) ->
     corpus = JSON.parse(corpusData)
     tiplocData = corpus.TIPLOCDATA
     tiplocToStanox = for tiplocDatum in tiplocData
