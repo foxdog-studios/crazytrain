@@ -9,17 +9,31 @@
   m = moment(date)
   startTime = parseInt(m.format('HHmm'))
   endTime = parseInt(m.add('minutes', timeOffset).format('HHmm'))
+  # Special after midnight case
+  if endTime < startTime
+    timeQuery =
+      tiploc_code: tiploc
+      $or: [
+        time:
+          $gte: startTime
+      ,
+        time:
+          $lte: endTime
+      ]
+  else
+    timeQuery =
+      tiploc_code: tiploc
+      time:
+        $gte: startTime
+        $lte: endTime
+
   day = (date.getDay() + 6) % 7
   dayQuery = {}
   dayQuery["JsonScheduleV1.schedule_days_runs.#{day}"] = true
   Schedules.find
     $and: [
       'JsonScheduleV1.schedule_segment.schedule_location':
-        $elemMatch:
-          tiploc_code: tiploc
-          time:
-            $gte: startTime
-            $lte: endTime
+        $elemMatch: timeQuery
     ,
       'JsonScheduleV1.schedule_start_date':
         $lt: date
