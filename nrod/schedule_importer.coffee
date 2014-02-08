@@ -34,6 +34,8 @@ list = (val) ->
 
 program
   .version('0.0.1')
+  .option('-c, --downloadcorpus')
+  .option('-d, --downloadschedules')
   .option('-s, --schedules <path_to_schedules>', 'schedule files', list)
   .option('-r, --railreference [path_to_rail_reference]',
           'NaPTAN rail reference')
@@ -63,11 +65,11 @@ getMongoDb = (callback) ->
 #
 ################################################################################
 
-downloadSchedule = (callback, toc_code) ->
+downloadNrodData = (path, callback) ->
   buffer = []
   httpOptions =
     hostname: 'datafeeds.networkrail.co.uk'
-    path: util.format(PATH_TEMPLATE, toc_code)
+    path: path
     auth: "#{config.datafeed.username}:#{config.datafeed.password}"
   req = https.request httpOptions, (res) ->
     if res.statusCode == 302
@@ -98,7 +100,26 @@ getScheduleCompositeUID = (jsonScheduleV1) ->
   cifStopIndicator = jsonScheduleV1['CIF_stp_indicator']
   return "#{cifTrainUid}#{scheduleStartDate}#{cifStopIndicator}"
 
+getTiplocToStanoxMap = (callback) ->
+  getMongoDb (db) ->
+    tiplocToStanoxCollection = db.collection('tiplocToStanox')
+    cursor = tiplocToStanoxCollection.find({})
+    cursor.toArray (error, tiplocToStanoxes) ->
+      if error?
+        logAndThrowError error
+      tiplocToStanoxMap = {}
+      for tiplocToStanox in tiplocToStanoxes
+        tiplocToStanoxMap[tiplocToStanox._id] = tiplocToStanox.stanox
+      callback(tiplocToStanoxMap)
+      db.close()
+
 importSchedule = (scheduleData, scheduleName, callback) ->
+  getTiplocToStanoxMap (tiplocToStanoxMap) ->
+    importScheduleFromMap(scheduleData, scheduleName, tiplocToStanoxMap,
+                          callback)
+
+
+importScheduleFromMap = (scheduleData, scheduleName, tiplocToStanoxMap, callback) ->
   entries = []
   scheduleEntries = []
   log.info "#{scheduleName}: reading scheduleData"
@@ -117,6 +138,7 @@ importSchedule = (scheduleData, scheduleName, callback) ->
       entry['_id'] = entry['TiplocV1']['tiploc_code']
       entries.push entry
     else if entry['JsonScheduleV1']
+      # TODO: Validity see http://nrodwiki.rockshore.net/index.php/SCHEDULE
       jsonScheduleV1 = entry['JsonScheduleV1']
       entry['_id'] = getScheduleCompositeUID(jsonScheduleV1)
       startDate = jsonScheduleV1['schedule_start_date']
@@ -134,6 +156,10 @@ importSchedule = (scheduleData, scheduleName, callback) ->
 
       if scheduleLocations?
         for scheduleLocation in scheduleLocations
+          tiploc = scheduleLocation.tiploc_code
+          stanox = tiplocToStanoxMap[tiploc]
+          scheduleLocation.stanox = stanox
+
           timeKeys = ['departure', 'public_departure', 'arrival', 'pass']
           for timeKey in timeKeys
             if scheduleLocation[timeKey]?
@@ -148,7 +174,6 @@ importSchedule = (scheduleData, scheduleName, callback) ->
             scheduleLocation['time'] = scheduleLocation['departure']
           else if scheduleLocation['pass']
             scheduleLocation['time'] = scheduleLocation['pass']
-
 
       scheduleEntries.push entry
 
@@ -203,6 +228,37 @@ readRailReferenceCsv = (railReferenceCsv) ->
           db.close()
   ).parse()
 
+################################################################################
+#
+# Network rail CORPUS importing for STANOX -> TIPLOC matching
+#
+################################################################################
+
+importCorpus = (corpusData) ->
+  getMongoDb (db) ->
+    corpus = JSON.parse(corpusData)
+    tiplocData = corpus.TIPLOCDATA
+    tiplocToStanox = for tiplocDatum in tiplocData
+      stanox = tiplocDatum.STANOX
+      tiploc = tiplocDatum.TIPLOC
+      # Empty values are spaces
+      continue if stanox == ' ' or tiploc == ' '
+      stanox: stanox, _id: tiploc
+    tiplocToStanoxCollection = db.collection('tiplocToStanox')
+    upsert = (tiplocToStanox, callback) ->
+      tiplocToStanoxCollection.update(
+          _id: tiplocToStanox._id
+        ,
+          _id: tiplocToStanox._id
+          stanox: tiplocToStanox.stanox
+        ,
+          upsert: true
+        , callback
+      )
+    async.each tiplocToStanox, upsert.bind(tiplocToStanoxCollection), (error) ->
+      log.info 'tiplocToStanox inserted'
+      db.close()
+
 
 ################################################################################
 #
@@ -210,18 +266,32 @@ readRailReferenceCsv = (railReferenceCsv) ->
 #
 ################################################################################
 
+downloadCorpus = ->
+  saveCorpus = (error, data) ->
+    if error
+      logAndThrowError
+    path = '/tmp/corpus.json'
+    fs.writeFile path, data, (error) ->
+      if error
+        logAndThrowError error
+      log.info "Save corpus to #{path}"
+      importCorpus(data)
+  downloadNrodData('/ntrod/SupportingFileAuthenticate?type=CORPUS',
+                   saveCorpus)
+
 main = ->
   if program.railreference
     log.info "loading rail reference form #{program.railreference}"
     readRailReferenceCsv(program.railreference)
-  else if program.schedules
+  if program.schedules
     for schedule in program.schedules
       log.info "loading schedule from #{schedule}"
       fs.readFile schedule, (error, data) ->
         if error
           logAndThrowError error
-        importSchedule(data, schedule)
-  else
+        importSchedule data, schedule ->
+          log.info "all done"
+  if program.downloadschedules
     downloadAndImport = (toc_code, callback) ->
       saveSchedule = (error, data) ->
         if error
@@ -234,11 +304,14 @@ main = ->
           importSchedule data, toc_code, ->
             data = null
             callback()
-      downloadSchedule(saveSchedule, toc_code)
+      path = util.format(PATH_TEMPLATE, toc_code)
+      downloadNrodData(path, saveSchedule)
     async.eachSeries config.datafeed.schedule_toc_codes, downloadAndImport, (error) ->
       if error
         logAndThrowError error
       console.log 'done'
+  if program.downloadcorpus
+    downloadCorpus()
 
 if require.main == module
   main()

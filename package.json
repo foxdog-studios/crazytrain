@@ -29,7 +29,8 @@
     "fast-csv": "0.0.3",
     "ospoint": "~0.1.2",
     "moment": "~2.5.1",
-    "stomp-client": "~0.4.0"
+    "stomp-client": "~0.4.0",
+    "prettyjson": "~0.11.1"
   },
   "devDependencies": {
     "grunt": "~0.4.2",

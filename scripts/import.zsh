@@ -20,6 +20,9 @@ fi
 # Import Rail Reference from NaPTAN
 node ./bin/schedule_importer.js -r "${rail_reference}"
 
+# Import CORPUS
+node ./bin/schedule_importer.js -c
+
 # Import SCHEDULE feeds
-node ./bin/schedule_importer.js
+node ./bin/schedule_importer.js -d
 
