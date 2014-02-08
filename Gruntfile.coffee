@@ -5,13 +5,13 @@ module.exports = (grunt) ->
     coffee:
       schedule_importer:
         expand: true
-        cwd: 'schedule_importer'
+        cwd: 'nrod'
         src: ['**/*.coffee']
         dest: 'bin'
         ext: '.js'
     watch:
       app:
-        files: 'schedule_importer/**/*.coffee'
+        files: 'nrod/**/*.coffee'
         tasks: ['coffee']
 
   # These plugins provide necessary tasks.

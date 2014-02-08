@@ -18,8 +18,8 @@ if [[ ! -a "${rail_reference}" ]]; then
 fi
 
 # Import Rail Reference from NaPTAN
-node ./bin/main.js -r "${rail_reference}"
+node ./bin/schedule_importer.js -r "${rail_reference}"
 
 # Import SCHEDULE feeds
-node ./bin/main.js
+node ./bin/schedule_importer.js
 
