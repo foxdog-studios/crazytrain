@@ -17,11 +17,11 @@ if [[ ! -a "${rail_reference}" ]]; then
     unzip -o "${naptan_path}"
 fi
 
-# Import Rail Reference from NaPTAN
-node ./bin/schedule_importer.js -r "${rail_reference}"
-
 # Import CORPUS
 node ./bin/schedule_importer.js -c
+
+# Import Rail Reference from NaPTAN
+node ./bin/schedule_importer.js -r "${rail_reference}"
 
 # Import SCHEDULE feeds
 node ./bin/schedule_importer.js -d

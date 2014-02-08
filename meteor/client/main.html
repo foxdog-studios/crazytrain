@@ -64,23 +64,4 @@
   </table>
 </template>
 
-<template name="schedule">
-  {{#isolate}}
-    <tr>
-      <td>{{arrival}}</td><td>{{from}}</td><td>{{platform}}</td><td>{{to}}</td><td>{{departure}}</td><td>{{atocCode}}</td><td>{{isActive}}</td>
-    </tr>
-    {{#with realtimeData}}
-      {{#if loc_stanox}}
-      <tr>
-        <td colspan="7" class="text-info">
-          {{#if terminated}}
-            Terminated.
-          {{/if}}
-          Last seen at {{lastSeen}} running {{variation_status}} varying from the timetable by {{timetable_variation}} minutes at {{actualTimestamp}} (planned {{plannedTimestamp}}) and going to {{goingTo}} should be there in {{next_report_run_time}} minutes.
-        </td>
-      <tr>
-      {{/if}}
-    {{/with}}
-  {{/isolate}}
-</template>
 

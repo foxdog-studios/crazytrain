@@ -30,6 +30,30 @@
       dayQuery
     ]
 
+
+getHoursMinutesFromTimestamp = (timestamp) ->
+  moment(parseInt(timestamp)).format('HHmm')
+
+@getTrainDataFromSchedule = (schedule) ->
+  train = Trains.findOne(scheduleId: schedule._id)
+  return unless train?
+  lastStanox = train.loc_stanox
+  if lastStanox
+    train.lastSeen = lastStanox
+  nextStanox = train.next_report_stanox
+  if nextStanox
+    train.goingTo = nextStanox
+  actualTimestamp = train.actual_timestamp
+  if actualTimestamp?
+    train.actualTimestamp = getHoursMinutesFromTimestamp(actualTimestamp)
+  plannedTimestamp = train.planned_timestamp
+  if plannedTimestamp?
+    train.plannedTimestamp = getHoursMinutesFromTimestamp(plannedTimestamp)
+  terminated = train.train_terminated
+  if terminated?
+    train.terminated = terminated == 'true'
+  train
+
 @getArrivalAndDepartureTimes = (currentTiploc, scheduleCursor) ->
   schedules = []
   scheduleCursor.forEach (rawSchedule) ->
@@ -39,23 +63,16 @@
       return
     schedule = {}
     schedule._id = rawSchedule._id
+    schedule.realtimeData = getTrainDataFromSchedule(schedule)
     schedule.atocCode = jsonScheduleV1.atoc_code
     [start, mid..., end] = locations
     if start.tiploc_code != currentTiploc
-      startStation = Stations.findOne(TiplocCode: start.tiploc_code)
-      if startStation?
-        schedule.from = startStation.StationName
-      else
-        schedule.from = start.tiploc_code
+      schedule.from = start.tiploc_code
     else
       schedule.from = null
       schedule.platform = start.platform
     if end.tiploc_code != currentTiploc
-      endStation = Stations.findOne(TiplocCode: end.tiploc_code)
-      if endStation?
-        schedule.to = endStation.StationName
-      else
-        schedule.to = end.tiploc_code
+      schedule.to = end.tiploc_code
     else
       schedule.to = null
       schedule.platform = end.platform
