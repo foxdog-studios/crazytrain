@@ -8,7 +8,10 @@ StompClient = require('stomp-client').StompClient
 dbUtils = require('./mongo_utils')
 
 
-log = logger.createLogger()
+if config.log?
+  log = logger.createLogger(config.log)
+else
+  log = logger.createLogger()
 
 class TrustMessageParser
   constructor: (@db) ->
@@ -30,18 +33,17 @@ class TrustMessageParser
     scheduleType = body.schedule_type
     scheduleId = "#{trainUid}#{scheduleStartDate}"
     trainId = body.train_id
-    log.info("Train activated #{trainId}")
     @trainsCollection.save
         _id: trainId
         scheduleId: scheduleId
         scheduleType: scheduleType
         active: true
+        dateAdded: new Date()
       , @_logError
 
   _parseTrainMovement: (message) ->
     body = message.body
     trainId = body.train_id
-    log.info("Train moved #{trainId}")
     errorCallback = (error) ->
       log.error(error)
     @trainsCollection.update _id: trainId,
@@ -57,7 +59,6 @@ class TrustMessageParser
           timetable_variation: body.timetable_variation
           train_terminated: body.train_terminated
       , @_logError
-
 
 
 class NrodClient
@@ -83,6 +84,7 @@ class NrodClient
     for message in JSON.parse(body)
       @trustMessageParser.parse(message)
 
+
 main = ->
   username = config.datafeed.username
   password = config.datafeed.password
@@ -95,6 +97,6 @@ main = ->
                                     trustMessageParser)
         nrodClient.connect()
 
-if require.main == module
-  main()
+
+main()
 

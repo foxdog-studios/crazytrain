@@ -1,6 +1,5 @@
 module.exports = (grunt) ->
 
-  # Project configuration.
   grunt.initConfig
     coffee:
       schedule_importer:
@@ -9,14 +8,22 @@ module.exports = (grunt) ->
         src: ['**/*.coffee']
         dest: 'bin'
         ext: '.js'
+    copy:
+      executables:
+        expand: true
+        cwd: 'nrod'
+        src: ['**/*.js']
+        dest: 'bin'
     watch:
       app:
         files: 'nrod/**/*.coffee'
         tasks: ['coffee']
+      executables:
+        files: 'nrod/**/*.js'
+        tasks: ['copy']
 
-  # These plugins provide necessary tasks.
   grunt.loadNpmTasks 'grunt-contrib-coffee'
+  grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-contrib-watch'
 
-  # Default task.
-  grunt.registerTask 'default', ['coffee']
+  grunt.registerTask 'default', ['coffee', 'copy']

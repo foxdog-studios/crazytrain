@@ -20,6 +20,8 @@ getOffsetDayOfWeek = (m) ->
   startDayOfWeek = getOffsetDayOfWeek(startDate)
   endDayOfWeek = getOffsetDayOfWeek(endDate)
 
+  console.log startDayOfWeek, endDayOfWeek
+
   dayQuery = {}
   # Special after midnight case
   if endTime < startTime

@@ -37,6 +37,7 @@ program
   .version('0.0.1')
   .option('-c, --downloadcorpus')
   .option('-d, --downloadschedules')
+  .option('-e, --removeold')
   .option('-s, --schedules <path_to_schedules>', 'schedule files', list)
   .option('-r, --railreference [path_to_rail_reference]',
           'NaPTAN rail reference')
@@ -257,6 +258,10 @@ importCorpus = (corpusData) ->
 #
 ################################################################################
 
+removeOldRecords = ->
+  dbUtils.getMongoDb (db) ->
+    schedules = db.collection('schedules')
+
 downloadCorpus = ->
   saveCorpus = (error, data) ->
     if error
@@ -271,6 +276,8 @@ downloadCorpus = ->
                    saveCorpus)
 
 main = ->
+  if program.removeold
+    removeOldRecords()
   if program.railreference
     log.info "loading rail reference form #{program.railreference}"
     readRailReferenceCsv(program.railreference)
@@ -304,6 +311,5 @@ main = ->
   if program.downloadcorpus
     downloadCorpus()
 
-if require.main == module
-  main()
+main()
 
