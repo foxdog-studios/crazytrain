@@ -3,12 +3,24 @@
   timeOffset or= 60
   getDateScheduleForTiploc(now, tiploc, timeOffset)
 
-@getDateScheduleForTiploc = (date, tiploc, timeOffset) ->
+getOffsetDayOfWeek = (m) ->
   # Days runs starts with monday at index 0, javascript starts with sunday at
   # index 0. We need to shift it along
-  m = moment(date)
-  startTime = parseInt(m.format('HHmm'))
-  endTime = parseInt(m.add('minutes', timeOffset).format('HHmm'))
+  (m.day() + 6) % 7
+
+@getDateScheduleForTiploc = (date, tiploc, timeOffset) ->
+  # FIXME: Retrieve schedules for trains that were schedules the previous day
+  # but finish after midnight, i.e., day of week is the day before and the last
+  # arrival time is after midnight.
+  startDate = moment(date)
+  endDate = startDate.clone().add('minutes', timeOffset)
+  startTime = parseInt(startDate.format('HHmm'))
+  endTime = parseInt(endDate.format('HHmm'))
+
+  startDayOfWeek = getOffsetDayOfWeek(startDate)
+  endDayOfWeek = getOffsetDayOfWeek(endDate)
+
+  dayQuery = {}
   # Special after midnight case
   if endTime < startTime
     timeQuery =
@@ -20,16 +32,23 @@
         time:
           $lte: endTime
       ]
+    startDayQuery = {}
+    startDayQuery["JsonScheduleV1.schedule_days_runs.#{startDayOfWeek}"] = true
+    endDayQuery = {}
+    endDayQuery["JsonScheduleV1.schedule_days_runs.#{endDayOfWeek}"] = true
+    dayQuery =
+      $or: [
+        startDayQuery
+      ,
+        endDayQuery
+      ]
   else
     timeQuery =
       tiploc_code: tiploc
       time:
         $gte: startTime
         $lte: endTime
-
-  day = (date.getDay() + 6) % 7
-  dayQuery = {}
-  dayQuery["JsonScheduleV1.schedule_days_runs.#{day}"] = true
+    dayQuery["JsonScheduleV1.schedule_days_runs.#{startDayOfWeek}"] = true
   Schedules.find
     $and: [
       'JsonScheduleV1.schedule_segment.schedule_location':
@@ -68,7 +87,9 @@ getHoursMinutesFromTimestamp = (timestamp) ->
     train.terminated = terminated == 'true'
   train
 
-@getArrivalAndDepartureTimes = (currentTiploc, scheduleCursor) ->
+@getArrivalAndDepartureTimes = (currentTiploc, scheduleCursor, date) ->
+  date or= new Date()
+  date = moment(date)
   schedules = []
   scheduleCursor.forEach (rawSchedule) ->
     jsonScheduleV1 = rawSchedule.JsonScheduleV1
@@ -97,10 +118,18 @@ getHoursMinutesFromTimestamp = (timestamp) ->
         schedule.platform = loc.platform
         break
     schedules.push schedule
+  nowTime = parseInt(date.format('HHmm'))
+  # FIXME: Ensure this works for sorting times as we approach midnight.
   sortedSchedules = _.sortBy schedules, (schedule) ->
     if schedule.arrival?
-      return schedule.arrival
-    schedule.departure
+      time = schedule.arrival
+    else if schedule.departure?
+      time = schedule.departure
+    else
+      return -1
+    if time < nowTime
+      time += 2359
+    time
   return sortedSchedules
 
 
