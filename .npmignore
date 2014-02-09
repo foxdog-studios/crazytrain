@@ -3,4 +3,5 @@ config/
 env/
 fabfile.py
 meteor/
+*.pyc
 
