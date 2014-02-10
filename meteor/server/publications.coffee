@@ -7,6 +7,9 @@ Meteor.publish 'schedules', (tiploc) ->
 Meteor.publish 'stations', ->
   Stations.find {}
 
+Meteor.publish 'statistics', ->
+  Statistics.find {}
+
 Meteor.publish 'trains', (scheduleIds) ->
   return unless scheduleIds?
   Trains.find(scheduleId: $in: scheduleIds)

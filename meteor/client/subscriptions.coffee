@@ -1,5 +1,6 @@
 Meteor.subscribe 'tiplocs'
 Meteor.subscribe 'stations'
+Meteor.subscribe 'statistics'
 
 Meteor.startup ->
   Deps.autorun ->

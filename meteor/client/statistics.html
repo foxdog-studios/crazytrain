@@ -1,0 +1,8 @@
+<template name="statistics">
+  Realtime data:
+  {{#with statistics}}
+    last message recieved at: {{lastMessageAt}}
+  {{else}}
+    No realtime data yet
+  {{/with}}
+</template>

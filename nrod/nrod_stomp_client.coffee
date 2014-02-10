@@ -16,11 +16,19 @@ else
 class TrustMessageParser
   constructor: (@db) ->
     @trainsCollection = @db.collection('trains')
+    @statisticsCollection = @db.collection('statistics')
 
   parse: (message) ->
     switch message.header.msg_type
       when '0001' then @_parseTrainActivation(message)
       when '0003' then @_parseTrainMovement(message)
+    @statisticsCollection.update _id: 'statistics',
+        $set:
+          lastMessageAt: new Date()
+          lastMessage: message
+      ,
+        upsert: true
+      , @_logError
 
   _logError: (error) ->
     if error?
@@ -44,8 +52,6 @@ class TrustMessageParser
   _parseTrainMovement: (message) ->
     body = message.body
     trainId = body.train_id
-    errorCallback = (error) ->
-      log.error(error)
     @trainsCollection.update _id: trainId,
         $set:
           event_type: body.event_type
@@ -62,23 +68,30 @@ class TrustMessageParser
 
 
 class NrodClient
-  constructor: (username, password, toc_code, @trustMessageParser) ->
-    @destination = "/topic/TRAIN_MVT_#{toc_code}_TOC"
+  constructor: (username, password, @toc_code, @trustMessageParser) ->
+    @destination = "/topic/TRAIN_MVT_#{@toc_code}_TOC"
     @client = new StompClient('datafeeds.networkrail.co.uk',
                               61618,
                               username,
                               password,
                               '1.0')
+    @client.on 'disconnect', @onDisconnect
 
   connect: ->
-    @client.connect @onConnection
+    @client.connect @onConnection, @onError
 
-  onConnection: (sessionId, error) =>
-    if error?
-      console.log error
+  onDisconnect: ->
+    log.info "#{@toc_code} feed disconnected"
+
+  onConnection: (sessionId) =>
     log.info "Trying to connect with session id: #{sessionId} ..."
     log.info "Subscribing to #{@destination}"
     @client.subscribe @destination, @onSubscription
+
+  onError: (error) =>
+    log.error "Error in #{@toc_code} feed"
+    log.error error
+    throw error
 
   onSubscription: (body, headers) =>
     for message in JSON.parse(body)
