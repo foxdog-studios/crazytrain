@@ -1,6 +1,6 @@
 {
   "name": "crazytrain",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "network rail arrival & departure server using datafeeds.networkrail.co.uk",
   "main": "index.js",
   "scripts": {
