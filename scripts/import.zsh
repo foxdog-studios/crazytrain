@@ -17,6 +17,11 @@ if [[ ! -a "${rail_reference}" ]]; then
     unzip -o "${naptan_path}"
 fi
 
+cd $repo
+
+# Clean old data
+node ./bin/schedule_importer.js -e
+
 # Import CORPUS
 node ./bin/schedule_importer.js -c
 

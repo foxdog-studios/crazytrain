@@ -1,5 +1,3 @@
-#!/bin/env node
-
 async = require('async')
 program = require('commander')
 config = require('config')
@@ -113,10 +111,12 @@ importScheduleFromMap = (scheduleData, scheduleName, tiplocToStanoxMap, callback
   log.info "#{scheduleName}: parsing schedule"
   lines = scheduleString.split('\n')
   numberOfLines = lines.length
+  dateAdded = new Date()
   for line, i in lines
     if i % 1000 == 0
       log.info "#{scheduleName}: #{i}/#{numberOfLines} parsed"
     entry = JSON.parse(line)
+    entry.dateAdded = dateAdded
     if entry['EOF']
       break
     if entry['TiplocV1']
@@ -260,7 +260,15 @@ importCorpus = (corpusData) ->
 
 removeOldRecords = ->
   dbUtils.getMongoDb (db) ->
-    schedules = db.collection('schedules')
+    oneAmToday = moment().set('hour', 1).set('minute', 0).set('second', 0)
+    removeOldEntries = (collectionName, callback) ->
+      collection = db.collection(collectionName)
+      collection.remove dateAdded: $lt: oneAmToday.toDate(), callback
+    async.eachSeries ['trains', 'schedules'], removeOldEntries, (error) ->
+      if error?
+        logAndThrowError error
+      log.info('Removed old records')
+      db.close()
 
 downloadCorpus = ->
   saveCorpus = (error, data) ->

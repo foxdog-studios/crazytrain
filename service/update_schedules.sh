@@ -18,6 +18,9 @@ fi
 export NODE_ENV=production
 export NODE_CONFIG_DIR=/etc/nrodstompclientservice
 
+# Delete out of data records
+/usr/bin/schedule_importer -e
+
 # Import CORPUS
 /usr/bin/schedule_importer -c
 

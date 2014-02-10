@@ -1,5 +1,3 @@
-#!/bin/env node
-
 config = require('config')
 logger = require('logger')
 prettyjson = require('prettyjson')
