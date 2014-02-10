@@ -1,4 +1,4 @@
-# Copyright 2013 Foxdog Studios Ltd
+# Copyright 2014 Foxdog Studios Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,14 +30,6 @@ from fabric.contrib import *
 # = External configuration ====================================================
 
 
-
-MONGODB_CONF = '''
-bind_ip = 127.0.0.1
-quiet = true
-dbpath = /var/lib/mongodb
-logpath = /var/log/mongodb/mongod.log
-logappend = true
-'''
 
 NGINX_PATH = '/etc/nginx'
 
@@ -113,16 +105,20 @@ def deploy():
     deploy_site()
     configure_nginx()
 
+
 @task
 def deploy_all():
     system_packages()
     deploy_site()
     configure_nginx()
+    services()
+
 
 @task
 def configure_nginx():
     nginx_configure()
     nginx_create_meteor_server()
+
 
 @task
 def deploy_site():
@@ -130,21 +126,18 @@ def deploy_site():
     bundle_put()
     bundle_deploy()
 
+
 @task
 def system_packages():
-    configure_mongodb()
     install_meteor()
     install_global_npm_packages()
 
 @task
-def configure_mongodb():
-    # Write the mongodb configuraion file
-    conf = StringIO(MONGODB_CONF)
-    mongodb_conf_path = '/etc/mongodb.conf'
-    put(local_path=conf, remote_path=mongodb_conf_path, use_sudo=True)
-    sudo('chmod 400 %s' % mongodb_conf_path)
+def services():
+    nrod_copy()
+    service_copy()
+    update_schedules_copy()
 
-    sudo('restart mongodb')
 
 def restart_nginx():
     sudo('service nginx restart')
@@ -154,6 +147,7 @@ def nginx_configure():
     # Ensure there are the sites available and sites enabled directories
     for path in [NGINX_SITES_AVAILABLE_PATH, NGINX_SITES_ENABLED_PATH]:
         sudo('mkdir -p %s' % path)
+
 
 def get_conf_from_template(conf_template):
     return conf_template % {
@@ -175,6 +169,7 @@ def create_site_available(conf_template, site_name=None):
     put_string(conf, conf_path, use_sudo=True)
     sudo('ln --force --symbolic %s %s' %
         (conf_path, posixpath.join(NGINX_SITES_ENABLED_PATH, subdomain_name)))
+
 
 @task
 def nginx_create_meteor_server():
@@ -207,6 +202,7 @@ def bundle_deploy():
     sudo('mv bundle %s' %  (server_dir,))
     sudo('chown -R root:root %s' % escape(server_dir))
 
+
 @task
 def bundle_put():
     put('bundle.tar.gz', 'bundle.tar.gz')
@@ -216,7 +212,6 @@ def bundle_put():
 def install_global_npm_packages():
     for package in escape('crazytrain', 'meteorite'):
         sudo('npm install -g %s' % (package,))
-
 
 @task
 def install_meteor():
@@ -228,11 +223,13 @@ def service_copy():
     put('service/nrodstompclientservice.conf', '/etc/init/', use_sudo=True)
     sudo('service nrodstompclientservice restart')
 
+
 @task
 def nrod_copy():
     config_dest = '/etc/nrodstompclientservice'
     sudo('mkdir -p %s' % config_dest)
     put('config/production.yaml', config_dest, use_sudo=True)
+
 
 @task
 def update_schedules_copy():
