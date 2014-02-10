@@ -131,6 +131,7 @@ def deploy_site():
 def system_packages():
     install_meteor()
     install_global_npm_packages()
+    install_crazytrain_package()
 
 @task
 def services():
@@ -208,10 +209,17 @@ def bundle_put():
     put('bundle.tar.gz', 'bundle.tar.gz')
 
 
+def install_global_npm_package(package):
+    sudo('cd /tmp && npm install -g %s' % (package,))
+
 @task
 def install_global_npm_packages():
-    for package in escape('crazytrain', 'meteorite'):
-        sudo('npm install -g %s' % (package,))
+    for package in escape('meteorite'):
+        install_global_npm_package(package)
+
+@task
+def install_crazytrain_package():
+    install_global_npm_package('crazytrain')
 
 @task
 def install_meteor():
