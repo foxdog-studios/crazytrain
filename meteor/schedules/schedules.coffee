@@ -127,9 +127,6 @@ getHoursMinutesFromTimestamp = (timestamp) ->
       time = schedule.departure
     else
       return -1
-    if time < nowTime
-      time += 2359
     time
   return sortedSchedules
-
 
