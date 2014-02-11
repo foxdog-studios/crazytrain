@@ -74,12 +74,18 @@ class NrodClient
                               password,
                               '1.0')
     @client.on 'disconnect', @onDisconnect
+    @client.on 'connect', @onConnect
 
   connect: ->
     @client.connect @onConnection, @onError
 
-  onDisconnect: ->
+  onDisconnect: =>
     log.info "#{@toc_code} feed disconnected"
+    log.info "#{@toc_code}: attempting reconnection"
+    @client.connect()
+
+  onConnect: =>
+    log.info "#{@toc_code} feed connected"
 
   onConnection: (sessionId) =>
     log.info "Trying to connect with session id: #{sessionId} ..."
