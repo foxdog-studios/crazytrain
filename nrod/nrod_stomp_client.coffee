@@ -66,6 +66,10 @@ class TrustMessageParser
 
 
 class NrodClient
+  CONNECTION_TIMEOUT = 1000
+  # max time out is 5 minutes
+  MAX_TIMEOUT = 1000 * 60 * 5
+
   constructor: (username, password, @toc_code, @trustMessageParser) ->
     @destination = "/topic/TRAIN_MVT_#{@toc_code}_TOC"
     @client = new StompClient('datafeeds.networkrail.co.uk',
@@ -74,7 +78,7 @@ class NrodClient
                               password,
                               '1.0')
     @client.on 'disconnect', @onDisconnect
-    @client.on 'connect', @onConnect
+    @connectionTimeout = NrodClient.CONNECTION_TIMEOUT
 
   connect: ->
     @client.connect @onConnection, @onError
@@ -82,14 +86,19 @@ class NrodClient
   onDisconnect: =>
     log.info "#{@toc_code} feed disconnected"
     log.info "#{@toc_code}: attempting reconnection"
-    @client.connect()
-
-  onConnect: =>
-    log.info "#{@toc_code} feed connected"
+    setTimout( =>
+      @connectionTimeout *= 2
+      if @connectionTimeout > NrodClient.MAX_TIMEOUT
+        @connectionTimeout = NrodClient.MAX_TIMEOUT
+      @client.connect()
+    ,
+      @connectionTimeout
+    )
 
   onConnection: (sessionId) =>
     log.info "Trying to connect with session id: #{sessionId} ..."
     log.info "Subscribing to #{@destination}"
+    @connectionTimeout = NrodClient.CONNECTION_TIMEOUT
     @client.subscribe @destination, @onSubscription
 
   onError: (error) =>
