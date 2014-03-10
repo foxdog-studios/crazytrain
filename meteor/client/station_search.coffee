@@ -1,5 +1,11 @@
+AUTOCOMPLETE_SELECTOR = 'input#station-search'
+
 Template.stationSearch.rendered = ->
-  AutoCompletion.init("input#station-search")
+  AutoCompletion.init(AUTOCOMPLETE_SELECTOR)
+  $(AUTOCOMPLETE_SELECTOR).on('autocompleteselect', (e, ui) ->
+    stationName = ui.item.value
+    updateSchedule(stationName)
+  )
 
 Template.stationSearch.helpers
   stationName: ->
@@ -12,12 +18,20 @@ searchHandle = null
 STATION_SEARCH_MAX_NUM_RESULTS = 10
 STATION_SEARCH_TIMEOUT_MS = 100
 
+updateSchedule = (stationName) ->
+  console.log "station name #{stationName}"
+  station = Stations.findOne(StationName: stationName)
+  unless station?
+    console.log "No station named #{stationName} :-("
+    return
+  Session.set('currentTiploc', station.TiplocCode)
+
 Template.stationSearch.events
   'keyup input#station-search': ->
     # Cancel any previous pending search
     if searchHandle?
       Meteor.clearTimeout(searchHandle)
-    name = $('#station-search').val()
+    name = $(AUTOCOMPLETE_SELECTOR).val()
     # Require 3 or more characters to try and prevent searches
     # which will be too broad and be slow on mobiles.
     if name.length < 3
@@ -26,7 +40,7 @@ Template.stationSearch.events
     # this is to increase responsiveness on mobiles (tested on Nexus 4).
     searchHandle = Meteor.setTimeout( ->
       AutoCompletion.autocomplete
-        element: 'input#station-search'
+        element: AUTOCOMPLETE_SELECTOR
         collection: Stations
         field: 'StationName'
         limit: STATION_SEARCH_MAX_NUM_RESULTS
@@ -35,11 +49,6 @@ Template.stationSearch.events
     , STATION_SEARCH_TIMEOUT_MS)
   'submit #station-form': (e) ->
     e.preventDefault()
-    stationName = $('#station-search').val()
-    console.log "station name #{stationName}"
-    station = Stations.findOne(StationName: stationName)
-    unless station?
-      console.log "No station named #{stationName} :-("
-      return
-    Session.set('currentTiploc', station.TiplocCode)
+    stationName = $(AUTOCOMPLETE_SELECTOR).val()
+    updateSchedule(stationName)
 

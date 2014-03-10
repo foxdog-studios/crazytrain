@@ -6,8 +6,9 @@
 standard-app-packages
 preserve-inputs
 coffeescript
-autocompletion
 bootstrap-3
 reststop2
 moment
 pince
+autocompletion
+less

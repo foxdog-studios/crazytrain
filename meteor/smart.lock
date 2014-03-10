@@ -2,27 +2,22 @@
   "meteor": {},
   "dependencies": {
     "basePackages": {
-      "autocompletion": {},
       "bootstrap-3": {},
       "reststop2": {},
       "moment": {},
-      "pince": {}
+      "pince": {},
+      "autocompletion": {}
     },
     "packages": {
-      "autocompletion": {
-        "git": "https://github.com/sebdah/meteor-autocompletion.git",
-        "tag": "v0.1.4",
-        "commit": "821cb4a85d94132edfc26e8f0c2a432c95485e79"
-      },
       "bootstrap-3": {
         "git": "https://github.com/mangasocial/meteor-bootstrap-3.git",
-        "tag": "v3.1.0-1",
-        "commit": "329dccb08bfc18c635676dea600ac9953162cda9"
+        "tag": "v3.1.1-1",
+        "commit": "63dd38968828bb8963636df93e9a1c45e2dfe67e"
       },
       "reststop2": {
         "git": "https://github.com/BeDifferential/reststop2.git",
-        "tag": "v0.5.4",
-        "commit": "12ff0306979d7b375cfa555fcaad9efafd3308ca"
+        "tag": "v0.5.6",
+        "commit": "14046bc686dab573957106cf96502e8a18c9204a"
       },
       "moment": {
         "git": "https://github.com/acreeger/meteor-moment.git",
@@ -33,6 +28,11 @@
         "git": "https://github.com/mad-eye/pince.git",
         "tag": "v0.0.5",
         "commit": "4524ecc0bdf043c49dc62e91bbd8a99c661081ed"
+      },
+      "autocompletion": {
+        "git": "https://github.com/sebdah/meteor-autocompletion.git",
+        "tag": "v0.1.4",
+        "commit": "821cb4a85d94132edfc26e8f0c2a432c95485e79"
       },
       "jquery-ui": {
         "git": "https://github.com/TimHeckel/meteor-jquery-ui.git",

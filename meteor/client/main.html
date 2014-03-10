@@ -47,9 +47,7 @@
     </tr>
   {{#if loaded}}
     {{#each schedules}}
-    <tr>
-      <td>{{arrival}}</td><td>{{stationNameFromTiploc from}}</td><td>{{platform}}</td><td>{{stationNameFromTiploc to}}</td><td>{{departure}}</td><td>{{atocCode}}</td><td>{{isActive}}</td>
-    </tr>
+      {{> schedule}}
     {{else}}
       <tr>
         <td colspan="7">
