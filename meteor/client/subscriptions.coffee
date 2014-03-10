@@ -14,10 +14,10 @@ Meteor.startup ->
     stations.forEach (station) ->
       TIPLOC_MAP[station.TiplocCode] = station.StationName
       STANOX_MAP[station.stanox] = station.StationName
-    if computation.firstRun
-      Deps.autorun ->
-        schedules = Schedules.find()
-        ids = schedules.map (schedule) ->
-          schedule._id
-        Meteor.subscribe 'trains', ids
+
+  Deps.autorun ->
+    schedules = Schedules.find()
+    ids = schedules.map (schedule) ->
+      schedule._id
+    Meteor.subscribe 'trains', ids
 

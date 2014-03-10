@@ -21,6 +21,7 @@
 </template>
 
 <template name="trainTimes">
+  {{#if loaded}}
   <table class="table">
     <tr>
       <th>
@@ -45,7 +46,6 @@
         Activated in system
       </th>
     </tr>
-  {{#if loaded}}
     {{#each schedules}}
       {{> schedule}}
     {{else}}
@@ -55,14 +55,10 @@
         </td>
       </tr>
     {{/each}}
-  {{else}}
-      <tr>
-        <td colspan="7">
-          loading...
-        </td>
-      </tr>
-  {{/if}}
   </table>
+  {{else}}
+    {{> spinner}}
+  {{/if}}
 </template>
 
 
