@@ -2,7 +2,7 @@
 
 setopt err_exit
 
-repo=${0:h}/..
+repo=${0:h}/../
 
 # Download NaPTAN if necessary
 naptan_path=/tmp/naptan.zip

@@ -4,6 +4,7 @@ mongo = require('mongodb')
 @getMongoDb = (callback) ->
   onMongoConnect = (error, db) ->
     if error
+      console.error('Unable to connect to mongodb. Is it running?')
       throw error
     callback(db)
 

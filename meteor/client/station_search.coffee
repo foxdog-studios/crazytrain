@@ -1,5 +1,5 @@
 Template.stationSearch.rendered = ->
-  AutoCompletion.init("input#station-search");
+  AutoCompletion.init("input#station-search")
 
 Template.stationSearch.helpers
   stationName: ->
@@ -8,15 +8,31 @@ Template.stationSearch.helpers
     if station
       return station.StationName
 
+searchHandle = null
+STATION_SEARCH_MAX_NUM_RESULTS = 10
+STATION_SEARCH_TIMEOUT_MS = 100
+
 Template.stationSearch.events
   'keyup input#station-search': ->
-    AutoCompletion.autocomplete
-      element: 'input#station-search'
-      collection: Stations
-      field: 'StationName'
-      limit: 10
-      sort:
-        'StationName': 1
+    # Cancel any previous pending search
+    if searchHandle?
+      Meteor.clearTimeout(searchHandle)
+    name = $('#station-search').val()
+    # Require 3 or more characters to try and prevent searches
+    # which will be too broad and be slow on mobiles.
+    if name.length < 3
+      return
+    # Use a timeout to throttle the number of times the db is searched,
+    # this is to increase responsiveness on mobiles (tested on Nexus 4).
+    searchHandle = Meteor.setTimeout( ->
+      AutoCompletion.autocomplete
+        element: 'input#station-search'
+        collection: Stations
+        field: 'StationName'
+        limit: STATION_SEARCH_MAX_NUM_RESULTS
+        sort:
+          'StationName': 1
+    , STATION_SEARCH_TIMEOUT_MS)
   'submit #station-form': (e) ->
     e.preventDefault()
     stationName = $('#station-search').val()
